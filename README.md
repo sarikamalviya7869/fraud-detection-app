@@ -1,66 +1,59 @@
-# Fraud Detection — Streamlit Deployment
+# 💳 Credit Card Fraud Detection
 
-## Step 1 — Save the model (add this as a NEW cell in your Colab notebook, after Cell 6)
+An end-to-end machine learning project that detects fraudulent credit card transactions using XGBoost, with a deployed Streamlit web app for real-time predictions.
 
-⚠️ **Important fix**: in your original notebook, `Amount` and `Time` were both scaled with the *same* `scaler` object, and `fit_transform` was called twice — the second call (on `Time`) overwrites the fit from the first (on `Amount`). This means the saved scaler would only really be correct for `Time`, not `Amount`. Use **two separate scalers** instead, as below.
+🔗 **Live App:** [sarikamalviya7869-fraud-detection-app-app-bni1ou.streamlit.app](https://sarikamalviya7869-fraud-detection-app-app-bni1ou.streamlit.app/)
 
-Replace your original Cell 3 scaling lines with this:
+## Demo
 
-```python
-from sklearn.preprocessing import StandardScaler
+![App Screenshot](screenshot1.png)
+![Prediction Result](screenshot2.png)
 
-amount_scaler = StandardScaler()
-time_scaler = StandardScaler()
+*(Add your two screenshots to this folder with these exact filenames, or update the paths above to match.)*
 
-X['Amount'] = amount_scaler.fit_transform(X[['Amount']])
-X['Time'] = time_scaler.fit_transform(X[['Time']])
-```
+## Problem
 
-Then add this new cell after training XGBoost (after Cell 6) to save everything:
+The dataset contains 284,807 credit card transactions, of which only **0.17% are fraudulent** — a severe class imbalance that makes this a genuinely challenging classification problem. A naive model that predicts "not fraud" every time would still be 99.8% accurate while catching zero fraud, which is why accuracy alone is the wrong metric here.
 
-```python
-import joblib
+## Approach
 
-joblib.dump(xgb, "fraud_model.pkl")
-joblib.dump(amount_scaler, "amount_scaler.pkl")
-joblib.dump(time_scaler, "time_scaler.pkl")
+1. **EDA** — explored class distribution, transaction amount patterns, and checked for missing values
+2. **Preprocessing** — scaled `Amount` and `Time` with separate `StandardScaler` instances (the other 28 features are already PCA-transformed)
+3. **Class imbalance handling** — used **SMOTE** (Synthetic Minority Oversampling) on the training set only, to avoid leaking synthetic data into the test set
+4. **Modeling** — compared Logistic Regression (baseline) against **XGBoost** (final model)
+5. **Evaluation** — used precision, recall, F1-score, and ROC-AUC instead of accuracy, since accuracy is meaningless on this imbalanced dataset
+6. **Deployment** — packaged the trained model and scalers, built a Streamlit UI, and deployed it on Streamlit Community Cloud
 
-# Download them to your computer
-from google.colab import files
-files.download("fraud_model.pkl")
-files.download("amount_scaler.pkl")
-files.download("time_scaler.pkl")
-```
+## Tech Stack
 
-This downloads 3 files to your computer: `fraud_model.pkl`, `amount_scaler.pkl`, `time_scaler.pkl`.
+- **Python**, pandas, NumPy
+- **scikit-learn** (Logistic Regression, StandardScaler, train/test split)
+- **XGBoost** (final classifier)
+- **imbalanced-learn** (SMOTE)
+- **Streamlit** (deployment UI)
+- **joblib** (model serialization)
 
-**Update:** `app.py` has been updated to use the two separate scalers (`amount_scaler.pkl` and `time_scaler.pkl`) — no further changes needed there.
-
-## Step 2 — Set up your GitHub repo
-
-Create a new repo (or use an existing one) with this structure:
+## Project Structure
 
 ```
 fraud-detection-app/
-├── app.py
-├── requirements.txt
-├── fraud_model.pkl
-├── amount_scaler.pkl
-├── time_scaler.pkl
+├── app.py                 # Streamlit app
+├── requirements.txt       # Dependencies
+├── fraud_model.pkl        # Trained XGBoost model
+├── amount_scaler.pkl      # StandardScaler for Amount
+├── time_scaler.pkl        # StandardScaler for Time
+└── Untitled18 (1).ipynb   # Full training notebook (EDA to model comparison)
 ```
 
-Push all files, including the `.pkl` files (they're small enough for a normal git push here).
+## Using the App
 
-## Step 3 — Deploy on Streamlit Community Cloud
+- **Single Transaction tab** — manually enter Time, Amount, and (optionally) the V1–V28 PCA features to get an instant Fraud / Legitimate prediction with a probability score
+- **Batch CSV Upload tab** — upload a CSV of multiple transactions and get predictions for all of them, downloadable as a CSV
 
-1. Go to https://share.streamlit.io
-2. Sign in with GitHub
-3. Click "New app", select your repo, branch, and `app.py` as the main file
-4. Click Deploy
+## Dataset
 
-You'll get a live public link like `https://your-app-name.streamlit.app` — put this in your resume/portfolio/GitHub README.
+[Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) — Kaggle, by the Machine Learning Group at ULB.
 
-## What the app does
+## Author
 
-- **Single Transaction tab**: manually enter Time, Amount, and (optionally) the V1–V28 PCA features, get an instant Fraud/Legitimate prediction with probability
-- **Batch CSV tab**: upload a CSV of multiple transactions, get predictions for all of them, download results
+Built by Sarika Malviya
